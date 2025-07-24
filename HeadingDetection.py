@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 # Import the functions from other files
 from ExcludeTableText import extract_text_fast
-from lanka import extract_all_headings
+from anuj_version.Adobe_India_Hackathon_25_Team_DSA_Challenge_1a.pdfScapper import extract_all_headings
 
 def extract_headings_filtered(pdf_path):
     """

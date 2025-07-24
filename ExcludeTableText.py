@@ -46,7 +46,7 @@ def extract_text_fast(pdf_path):
 
 
 if __name__ == "__main__":
-    pdf_path = "input/file01.pdf"
+    pdf_path = "input/file05.pdf"
 
     start = time.time()
     clean_text = extract_text_fast(pdf_path)

@@ -107,7 +107,6 @@ WEBSITE_PATTERNS = [
     r"\.education", r"\.ltd", r"\.plc", r"\.inc", r"\.corp", r"\.org.uk",
     r"@[\w\.-]+\.\w{2,}"
 ]
-
 # =================================================================
 
 # Text exclusion and heading filtering
@@ -135,144 +134,75 @@ def filter_heading_candidate(text, font_size, bold_ratio):
     if text.lower().startswith(("i declare","i certify","signature of")): return False
     return True
 
-# Main extraction - Extract ALL potential headings without filtering
-def extract_all_headings(pdf_path):
-    """
-    Extract ALL potential headings from a PDF without any exclusion filtering.
-    Returns a comprehensive list of all text that could be headings based on formatting.
-    """
+# Main extraction
+def extract_headings(pdf_path):
     try:
         doc = fitz.open(pdf_path)
     except Exception as e:
         print(f"Error opening PDF {pdf_path}: {e}")
-        return {"title": "", "outline": []}
-    
-    all_headings = []
-    
+        return {"title":"","outline":[]}
+    outline=[]
     for page_idx, page in enumerate(doc):
         blocks = page.get_text("dict")["blocks"]
-        lines = []
-        
+        lines=[]
         for block in blocks:
-            if "lines" not in block:
-                continue
+            if"lines"not in block:continue
             for line in block["lines"]:
-                text = "".join(span["text"] for span in line["spans"]).strip()
-                if not text:  # Skip empty text
-                    continue
-                    
-                bbox = line["bbox"]
-                font_size = np.mean([span["size"] for span in line["spans"]])
-                bold_ratio = sum(
-                    ("bold" in span.get("font", "").lower()) or (span.get("flags", 0) & 2)
-                    for span in line["spans"]
-                ) / len(line["spans"]) if line["spans"] else 0
-                
-                lines.append({
-                    "text": text,
-                    "bbox": bbox,
-                    "font_size": font_size,
-                    "bold_ratio": bold_ratio,
-                    "page": page_idx,
-                    "y_center": (bbox[1] + bbox[3]) / 2
-                })
-        
-        if not lines:
-            continue
-            
-        height = page.rect.height
-        
-        # Extract potential titles from top of page (more permissive)
-        tops = [l for l in lines 
-                if l["y_center"] < height * 0.3  # Increased from 0.15/0.25 to 0.3
-                and l["font_size"] > 10  # Reduced from 14/12 to 10
-                and len(l["text"].split()) >= 2]  # Reduced from 3/4 to 2
-        
+                text="".join(span["text"]for span in line["spans"]).strip()
+                bbox=line["bbox"]
+                font_size=np.mean([span["size"]for span in line["spans"]])
+                bold_ratio=sum(("bold"in span.get("font","").lower())or(span.get("flags",0)&2)for span in line["spans"])/len(line["spans"]) if line["spans"] else 0
+                lines.append({"text":text,"bbox":bbox,"font_size":font_size,"bold_ratio":bold_ratio,"page":page_idx,"y_center":(bbox[1]+bbox[3])/2})
+        if not lines:continue
+        height=page.rect.height
+        # Title
+        tops=[l for l in lines if not text_contains_exclusion_keywords(l["text"]) and l["y_center"]<height*0.15 and l["font_size"]>14 and len(l["text"].split())>=3]
+        if not tops:
+            tops=[l for l in lines if l["y_center"]<height*0.25 and l["font_size"]>12 and len(l["text"].split())>=4]
         if tops:
-            # Sort by font size, bold ratio, and position
-            best = sorted(tops, key=lambda l: (-l["font_size"], -l["bold_ratio"], l["y_center"]))[0]
-            all_headings.append({
-                "level": "H1", 
-                "text": best["text"], 
-                "page": best["page"],
-                "font_size": best["font_size"],
-                "bold_ratio": best["bold_ratio"]
-            })
-            used = {best["text"]}
+            best=sorted(tops,key=lambda l:(-l["font_size"],-l["bold_ratio"],l["y_center"]))[0]
+            outline.append({"level":"H1","text":best["text"],"page":best["page"]})
+            used={best["text"]}
         else:
-            used = set()
-        
-        # Extract ALL potential subheadings (very permissive)
-        potential_headings = [l for l in lines 
-                            if l["text"] not in used 
-                            and len(l["text"].strip()) > 0  # Not empty
-                            and len(l["text"]) < 200  # Not too long
-                            and not re.match(r"^\d+\.?$", l["text"].strip())  # Not just numbers
-                            and l["font_size"] > 8]  # Minimum font size
-        
-        # Further refine to get better candidates
-        refined = [l for l in potential_headings 
-                  if len(l["text"].split()) >= 2  # At least 2 words
-                  and len(l["text"]) >= 5]  # At least 5 characters
-        
+            used=set()
+        # Subheadings
+        clean=[l for l in lines if l["text"] not in used and filter_heading_candidate(l["text"],l["font_size"],l["bold_ratio"])]
+        refined=[l for l in clean if len(l["text"].split())>=5 and len(l["text"])>=15]
         if refined:
-            # Use clustering to group by formatting
-            sizes = np.array([l['font_size'] for l in refined]).reshape(-1, 1)
-            weights = np.array([l['bold_ratio'] for l in refined]).reshape(-1, 1)
-            feats = np.hstack([sizes, weights])
-            
-            # Determine number of clusters based on unique font sizes
-            unique_sizes = len(np.unique(sizes))
-            ncl = min(3, max(1, unique_sizes))  # 1-3 clusters
-            
-            if ncl > 1 and len(refined) > 1:
-                clustering = AgglomerativeClustering(n_clusters=ncl).fit(feats)
-                scores = []
+            sizes=np.array([l['font_size']for l in refined]).reshape(-1,1)
+            weights=np.array([l['bold_ratio']for l in refined]).reshape(-1,1)
+            feats=np.hstack([sizes,weights])
+            ncl=min(2,len(np.unique(sizes)))
+            if ncl>1 and len(refined)>1:
+                clustering=AgglomerativeClustering(n_clusters=ncl).fit(feats)
+                scores=[]
                 for cid in range(ncl):
-                    mask = clustering.labels_ == cid
-                    avg_size = sizes[mask].mean()
-                    avg_weight = weights[mask].mean()
-                    scores.append((cid, avg_size + avg_weight))
-                
-                scores.sort(key=lambda x: x[1], reverse=True)
-                level_map = {cid: f"H{i+1}" for i, (cid, _) in enumerate(scores)}
-                
-                for idx, l in enumerate(refined):
-                    lvl = level_map[clustering.labels_[idx]]
+                    mask=clustering.labels_==cid
+                    scores.append((cid,sizes[mask].mean()+weights[mask].mean()))
+                scores.sort(key=lambda x:x[1],reverse=True)
+                level_map={cid:f"H{i+1}"for i,(cid,_)in enumerate(scores)}
+                for idx,l in enumerate(refined):
+                    lvl=level_map[clustering.labels_[idx]]
                     if l["text"] not in used:
-                        all_headings.append({
-                            "level": lvl, 
-                            "text": l["text"], 
-                            "page": page_idx,
-                            "font_size": l["font_size"],
-                            "bold_ratio": l["bold_ratio"]
-                        })
+                        outline.append({"level":lvl,"text":l["text"],"page":page_idx})
                         used.add(l["text"])
             else:
-                # If no clustering, add all as H2
                 for l in refined:
                     if l["text"] not in used:
-                        all_headings.append({
-                            "level": "H2", 
-                            "text": l["text"], 
-                            "page": page_idx,
-                            "font_size": l["font_size"],
-                            "bold_ratio": l["bold_ratio"]
-                        })
+                        outline.append({"level":"H2","text":l["text"],"page":page_idx})
                         used.add(l["text"])
-    
-    # Deduplicate results
-    final = []
-    seen = set()
-    for h in all_headings:
-        key = (h['level'], h['text'], h['page'])
+    # Dedupe
+    final=[]
+    seen=set()
+    for h in outline:
+        key=(h['level'],h['text'],h['page'])
         if key not in seen:
             final.append(h)
             seen.add(key)
-    
-    title = final[0]['text'] if final else ""
-    
-    return {"title": title, "outline": final}
+    title=final[0]['text'] if final else ""
+    if title and any(k in title.lower() for k in ["form","application","request","declaration"]):
+        return {"title":title,"outline":[]}
+    return {"title":title,"outline":final}
 
 # Batch processing
 
@@ -280,7 +210,7 @@ def process_all_pdfs(input_dir="input", output_dir="output"):
     os.makedirs(output_dir,exist_ok=True)
     for fn in sorted(os.listdir(input_dir)):
         if not fn.lower().endswith(".pdf"): continue
-        res=extract_all_headings(os.path.join(input_dir,fn))
+        res=extract_headings(os.path.join(input_dir,fn))
         out=os.path.splitext(fn)[0]+".json"
         with open(os.path.join(output_dir,out),'w',encoding='utf-8') as f:
             json.dump(res,f,ensure_ascii=False,indent=2)
