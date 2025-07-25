@@ -1,130 +1,203 @@
 import os
-import re
-import json
-import fitz  # PyMuPDF
-import numpy as np
-from sklearn.cluster import AgglomerativeClustering
-import pytesseract
-import cv2
-from PIL import Image
-from concurrent.futures import ThreadPoolExecutor
-
-# Import the functions from other files
+import glob
 from ExcludeTableText import extract_text_fast
-from anuj_version.Adobe_India_Hackathon_25_Team_DSA_Challenge_1a.pdfScapper import extract_all_headings
+import time
+from pdfScapper import extract_headings
 
-def extract_headings_filtered(pdf_path):
-    """
-    Two-step heading extraction process:
+# def process_all_pdfs():
+#     """
+#     Process all PDF files in the input directory using ExcludeTableText.py
+#     Returns a dictionary with PDF filenames as keys and extracted text as values
+#     """
+#     # Get all PDF files from input directory
+#     input_dir = "input"
+#     pdf_files = glob.glob(os.path.join(input_dir, "*.pdf"))
     
-    1. Extract ALL potential headings using lanka.py (without any filtering)
-    2. Get text outside tables/boxes using ExcludeTableText.py
-    3. Filter headings to only include those that exist in the clean text
-    4. Write final filtered results to JSON
-    """
-    print(f"\n=== Processing {pdf_path} ===")
+#     # Dictionary to store results for each PDF
+#     pdf_results = {}
     
-    # Step 1: Extract ALL potential headings from lanka.py
-    print("Step 1: Extracting all potential headings...")
-    all_headings_result = extract_all_headings(pdf_path)
-    all_headings = all_headings_result.get("outline", [])
-    title = all_headings_result.get("title", "")
+#     print(f"Found {len(pdf_files)} PDF files to process:")
+#     for pdf_file in pdf_files:
+#         print(f"- {os.path.basename(pdf_file)}")
     
-    print(f"Found {len(all_headings)} potential headings from formatting analysis")
+#     print("\n" + "="*50)
+#     print("Starting PDF processing...")
+#     print("="*50)
     
-    # Step 2: Get clean text (outside tables/boxes) using ExcludeTableText
-    print("Step 2: Extracting text outside tables/boxes...")
-    excluded_text = extract_text_fast(pdf_path)
-    
-    # Create a set of clean text lines for fast lookup
-    clean_text_lines = set()
-    for line in excluded_text.split('\n'):
-        line = line.strip()
-        if line:
-            clean_text_lines.add(line.lower())
-    
-    print(f"Found {len(clean_text_lines)} lines of clean text outside tables/boxes")
-    
-    # Step 3: Filter headings - only keep those that exist in clean text
-    print("Step 3: Filtering headings against clean text...")
-    filtered_headings = []
-    filtered_title = ""
-    
-    # Check title first
-    if title and title.lower() in clean_text_lines:
-        filtered_title = title
-        print(f"✅ Title kept: '{title}'")
-    elif title:
-        print(f"❌ Title filtered out: '{title}'")
-    
-    # Check each heading
-    for heading in all_headings:
-        heading_text = heading["text"]
-        if heading_text.lower() in clean_text_lines:
-            filtered_headings.append(heading)
-            print(f"✅ Heading kept: '{heading_text}' (Level: {heading['level']})")
-        else:
-            print(f"❌ Heading filtered out: '{heading_text}' (Level: {heading['level']})")
-    
-    print(f"\nFinal result: {len(filtered_headings)} headings passed the filter")
-    
-    return {
-        "title": filtered_title,
-        "outline": filtered_headings,
-        "stats": {
-            "total_potential_headings": len(all_headings),
-            "clean_text_lines": len(clean_text_lines),
-            "final_headings": len(filtered_headings)
-        }
-    }
-
-def process_all_pdfs_filtered(input_dir="input", output_dir="output"):
-    """
-    Process all PDFs using the two-step filtering approach
-    """
-    os.makedirs(output_dir, exist_ok=True)
-    
-    print(f"Processing PDFs from: {input_dir}")
-    print(f"Output directory: {output_dir}")
-    
-    pdf_files = [f for f in sorted(os.listdir(input_dir)) if f.lower().endswith(".pdf")]
-    
-    if not pdf_files:
-        print("No PDF files found in input directory!")
-        return
-    
-    print(f"Found {len(pdf_files)} PDF files to process")
-    
-    for fn in pdf_files:
-        print(f"\n{'='*60}")
-        print(f"Processing: {fn}")
-        print(f"{'='*60}")
+#     # Process each PDF file
+#     for pdf_file in pdf_files:
+#         filename = os.path.basename(pdf_file)
+#         print(f"\n📄 Processing: {filename}")
         
-        try:
-            # Extract and filter headings
-            result = extract_headings_filtered(os.path.join(input_dir, fn))
+#         try:
+#             start_time = time.time()
             
-            # Save to JSON
-            output_filename = os.path.splitext(fn)[0] + ".json"
-            output_path = os.path.join(output_dir, output_filename)
+#             # Extract text using ExcludeTableText method
+#             extracted_text = extract_text_fast(pdf_file)
             
-            with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(result, f, ensure_ascii=False, indent=2)
+#             end_time = time.time()
+#             processing_time = end_time - start_time
             
-            # Print summary
-            stats = result.get("stats", {})
-            print(f"\n📊 Summary for {fn}:")
-            print(f"   Title: '{result['title']}'")
-            print(f"   Potential headings found: {stats.get('total_potential_headings', 0)}")
-            print(f"   Clean text lines: {stats.get('clean_text_lines', 0)}")
-            print(f"   Final headings: {stats.get('final_headings', 0)}")
-            print(f"   Output saved to: {output_filename}")
+#             # Store results with filename as key
+#             pdf_results[filename] = {
+#                 'text': extracted_text,
+#                 'processing_time': processing_time,
+#                 'file_path': pdf_file
+#             }
             
-        except Exception as e:
-            print(f"❌ Error processing {fn}: {e}")
-            continue
+#             print(f"✅ Completed in {processing_time:.2f} seconds")
+#             print(f"📊 Extracted {len(extracted_text.split())} words")
+            
+#         except Exception as e:
+#             print(f"❌ Error processing {filename}: {str(e)}")
+#             pdf_results[filename] = {
+#                 'text': '',
+#                 'processing_time': 0,
+#                 'file_path': pdf_file,
+#                 'error': str(e)
+#             }
     
-    print(f"\n🎉 Processing complete! Check the '{output_dir}' directory for results.")
+#     print("\n" + "="*50)
+#     print("Processing Summary:")
+#     print("="*50)
+    
+#     for filename, result in pdf_results.items():
+#         if 'error' in result:
+#             print(f"❌ {filename}: ERROR - {result['error']}")
+#         else:
+#             word_count = len(result['text'].split())
+#             print(f"✅ {filename}: {word_count} words extracted in {result['processing_time']:.2f}s")
+    
+#     return pdf_results
+
+import os
+import glob
+import time
+import json
+from ExcludeTableText import extract_text_fast
+from pdfScapper import extract_headings
+import re
+
+
+import re
+
+def normalize_text(text):
+    # Convert to lowercase
+    text = text.lower()
+    # Replace multiple spaces/newlines/tabs with a single space
+    text = re.sub(r'\s+', ' ', text)
+    # Optional: remove punctuation (you can skip this if formatting matters)
+    text = re.sub(r'[^\w\s]', '', text)
+    return text.strip()
+
+
+def process_all_pdfs():
+    input_dir = "input"
+    output_dir = "output"
+    os.makedirs(output_dir, exist_ok=True)
+
+    pdf_files = glob.glob(os.path.join(input_dir, "*.pdf"))
+    pdf_results = {}
+
+    for pdf_file in pdf_files:
+        filename = os.path.basename(pdf_file)
+        try:
+            print(f"\n📄 Processing: {filename}")
+            start_time = time.time()
+
+            # 1. Extract body text
+            body_text = extract_text_fast(pdf_file)
+
+            # 2. Extract outline/headings
+            heading_data = extract_headings(pdf_file)
+            print("------------------------------Extracted headings :--------------------------------------------- ")
+            print(heading_data)
+            filtered_outline = []
+
+            # 3. Keep headings only if text exists in body
+            for h in heading_data["outline"]:
+                if normalize_text(h["text"]) in normalize_text(body_text):
+                    filtered_outline.append(h)
+
+            # 4. Validate title exists in text
+            final_title = heading_data["title"] 
+
+            end_time = time.time()
+            processing_time = end_time - start_time
+
+            # 5. Save result as JSON in output directory
+            json_output = {
+                "title": final_title,
+                "outline": filtered_outline
+            }
+
+            output_filename = os.path.splitext(filename)[0] + ".json"
+            output_path = os.path.join(output_dir, output_filename)
+
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(json_output, f, ensure_ascii=False, indent=2)
+
+            # 6. Also save for internal reference if needed
+            pdf_results[filename] = {
+                "text": body_text,
+                "outline": filtered_outline,
+                "title": final_title,
+                "processing_time": processing_time,
+                "file_path": pdf_file
+            }
+
+            print(f"✅ Saved to: {output_path} ({len(filtered_outline)} headings, {len(body_text.split())} words)")
+
+        except Exception as e:
+            print(f"❌ Error processing {filename}: {e}")
+            pdf_results[filename] = {
+                "text": "",
+                "outline": [],
+                "title": final_title,
+                "processing_time": 0,
+                "file_path": pdf_file,
+                "error": str(e)
+            }
+
+    return pdf_results
+
+def get_pdf_text(pdf_results, filename):
+    """
+    Get extracted text for a specific PDF file
+    
+    Args:
+        pdf_results: Dictionary returned by process_all_pdfs()
+        filename: Name of the PDF file (e.g., 'file01.pdf')
+    
+    Returns:
+        Extracted text string or None if file not found
+    """
+    if filename in pdf_results:
+        return pdf_results[filename]['text']
+    else:
+        print(f"File {filename} not found in results")
+        return None
+
+def get_pdf_info(pdf_results, filename):
+    """
+    Get complete information for a specific PDF file
+    
+    Args:
+        pdf_results: Dictionary returned by process_all_pdfs()
+        filename: Name of the PDF file (e.g., 'file01.pdf')
+    
+    Returns:
+        Dictionary with text, processing_time, file_path, and optionally error
+    """
+    if filename in pdf_results:
+        return pdf_results[filename]
+    else:
+        print(f"File {filename} not found in results")
+        return None
+    
+
 
 if __name__ == "__main__":
-    process_all_pdfs_filtered()
+    # Process all PDFs and store results
+    results = process_all_pdfs()
+    
