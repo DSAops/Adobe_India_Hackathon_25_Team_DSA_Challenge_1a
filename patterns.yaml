@@ -2,3 +2,6 @@ DISCLAIMER_KEYWORDS: = r'disclaimer|terms and conditions|privacy policy|all righ
 ADDRESS_KEYWORDS: = r'address|suite|road|street|avenue|parkway|boulevard|drive'
 INSTRUCTIONAL_KEYWORDS: = r'instructions|please read carefully|guidelines|rsvp'
 WEBSITE_PATTERNS: = r'(https?://[^\s]+|www\.[^\s]+)'
+FOOTER_KEYWORDS: 'page \d+|copyright|©|\d{4} all rights reserved'
+HEADER_KEYWORDS: 'confidential|draft|internal use only'
+FORM_FIELDS: 'name:|date:|signature:|please fill'
