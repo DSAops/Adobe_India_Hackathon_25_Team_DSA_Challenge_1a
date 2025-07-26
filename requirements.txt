@@ -1,0 +1,6 @@
+# External packages that need to be installed
+PyMuPDF==1.23.5
+numpy==1.24.3
+pytesseract==0.3.10
+opencv-python==4.8.0.76
+Pillow==10.0.0

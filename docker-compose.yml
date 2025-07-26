@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  pdf-processor:
+    build: .
+    container_name: adobe-pdf-processor
+    volumes:
+      # Mount input directory (read-only)
+      - ./input:/app/input:ro
+      # Mount output directory (read-write)
+      - ./output:/app/output:rw
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Remove the default CMD and run interactively if needed
+    # command: python main.py
+    
+    # For interactive debugging, uncomment below:
+    # stdin_open: true
+    # tty: true
+    # command: /bin/bash
