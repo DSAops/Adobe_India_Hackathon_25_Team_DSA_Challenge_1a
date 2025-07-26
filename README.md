@@ -290,7 +290,7 @@ chmod +x docker.sh
 pip install -r requirements.txt
 
 # Process PDFs
-python main.py
+python3 main.py
 ```
 
 ---
