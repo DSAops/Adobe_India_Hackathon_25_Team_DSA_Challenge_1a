@@ -46,16 +46,4 @@ def extract_text_fast(pdf_path):
 
 
 if __name__ == "__main__":
-    pdf_path = "input/file05.pdf"
-
-    start = time.time()
-    clean_text = extract_text_fast(pdf_path)
-    end = time.time()
-
-    print("✅ Time taken: {:.2f} seconds".format(end - start))
-    print("\n--- Extracted Text (Outside Boxes) ---\n")
-    print(f"Script size: {os.path.getsize('lanka.py') / 1024:.2f} KB")
-    for line in clean_text.split('\n'):
-        line = line.strip()
-        if line:
-            print(line)
+    print("Extracting text from PDF...")

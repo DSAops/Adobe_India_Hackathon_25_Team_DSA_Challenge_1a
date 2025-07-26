@@ -52,7 +52,8 @@ Thumbs.db
 # Test files (keep structure but ignore actual test PDFs)
 
 output/*.json
-
+input/*.pdf
+*.pdf
 # Keep directories
 !input/.gitkeep
 !output/.gitkeep
