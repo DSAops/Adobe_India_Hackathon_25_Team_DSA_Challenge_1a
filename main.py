@@ -6,9 +6,6 @@ from ExcludeTableText import extract_text_fast
 from pdfScapper import extract_headings
 import re
 
-
-import re
-
 def normalize_text(text):
     # Convert to lowercase
     text = text.lower()
@@ -38,8 +35,6 @@ def process_all_pdfs():
 
             # 2. Extract outline/headings
             heading_data = extract_headings(pdf_file)
-            print("------------------------------Extracted headings :--------------------------------------------- ")
-            print(heading_data)
             filtered_outline = []
 
             # 3. Keep headings only if text exists in body

@@ -1,0 +1,5 @@
+DISCLAIMER_KEYWORDS: 'disclaimer|terms and conditions|privacy policy|all rights reserved'
+ADDRESS_KEYWORDS: 'address|suite|road|street|avenue|parkway|boulevard|drive'
+INSTRUCTIONAL_KEYWORDS: 'instructions|please read carefully|guidelines|rsvp'
+GENERIC_SECTIONS: 'table of contents|references|bibliography|index'
+WEBSITE_PATTERNS: '(https?://[^\s]+|www\.[^\s]+)'

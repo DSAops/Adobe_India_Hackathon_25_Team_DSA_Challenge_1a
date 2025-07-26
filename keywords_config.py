@@ -1,89 +1,58 @@
-"""
-Keywords and patterns configuration file for PDF text analysis.
-This file contains all keyword lists and regex patterns used for text classification
-and filtering in the PDF processing pipeline.
-"""
+import yaml
+import re
+import os
 
-# Address-related keywords for identifying location and contact information
-ADDRESS_KEYWORDS = [
-    "street", "st.", "road", "rd.", "avenue", "ave.", "circle", "blvd",
-    "lane", "ln.", "p.o.", "po box", "apartment", "suite", "district",
-    "city", "village", "state", "country", "zip", "pin"
-]
+def load_patterns_from_yaml(path):
+    """Load regex patterns for each category from a YAML file."""
+    with open(path, "r", encoding="utf-8") as f:
+        patterns = yaml.safe_load(f)
+    # Pre-compile all regex for performance
+    return {cat: re.compile(pattern, re.IGNORECASE) for cat, pattern in patterns.items()}
 
-# Instructional keywords for identifying procedural and directive content
-INSTRUCTIONAL_KEYWORDS = [
-    "please", "must", "required", "should", "do not", "cannot", "will not",
-    "need to", "parents or guardians", "visit", "fill out", "waiver", "rsvp",
-    "ticket", "registration", "sign up", "sign up for"
-]
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "patterns.yaml")
+PATTERNS = load_patterns_from_yaml(CONFIG_PATH)
 
-# Disclaimer and legal keywords for identifying legal and warning content
-DISCLAIMER_KEYWORDS = [
-    "disclaimer", "terms and conditions","©","Copyright ©"
-]
-
-# Website and URL patterns for identifying web content and email addresses
-WEBSITE_PATTERNS = [
-    r"http[s]?://", r"www\.", r"\.com", r"\.org", r"\.net",
-    r"mailto:", r"@\w+", r"\.gov", r"\.info",
-    r"\.edu", r"\.io", r"\.co", r"\.us", r"\.uk", r"\.ca", r"\.au", r"\.de",
-    r"\.jp", r"\.fr", r"\.ru", r"\.ch", r"\.it", r"\.nl", r"\.se", r"\.no",
-    r"\.es", r"\.cz", r"\.in", r"\.br", r"\.mx", r"\.ar", r"\.za", r"\.kr",
-    r"\.hk", r"\.sg", r"\.nz", r"\.be", r"\.at", r"\.dk", r"\.fi", r"\.pl",
-    r"\.pt", r"\.gr", r"\.tr", r"\.il", r"\.sa", r"\.ae", r"\.cl", r"\.co\.uk",
-    r"\.ac", r"\.museum", r"\.pro", r"\.biz", r"\.tv", r"\.info", r"\.int",
-    r"\.mil", r"\.arpa", r"\.xxx", r"https?://[\w\-\.]+\.\w{2,}",
-    r"ftp://", r"sftp://", r"scp://", r"ssh://", r"\.ly", r"\.am",
-    r"\.fm", r"\.la", r"\.me", r"\.name", r"\.password", r"\.io/",
-    r"\.ai", r"\.app", r"\.dev", r"\.cloud", r"\.shop", r"\.store", r"\.blog",
-    r"\.news", r"\.live", r"\.games", r"\.mobile", r"\.online",
-    r"\.site", r"\.tech", r"\.website", r"\.world", r"\.space",
-    r"\.network", r"\.systems", r"\.solutions", r"\.services", r"\.center",
-    r"\.agency", r"\.company", r"\.group", r"\.industries", r"\.ventures",
-    r"\.capital", r"\.partners", r"\.studio", r"\.digital", r"\.expert",
-    r"\.education", r"\.ltd", r"\.plc", r"\.inc", r"\.corp", r"\.org.uk",
-    r"@[\w\.-]+\.\w{2,}"
-]
-
-# Additional utility functions for keyword management
-def get_all_keywords():
+def classify_text(text):
     """
-    Returns a dictionary containing all keyword lists for easy access
+    Returns a list of all category names whose pattern is found in the text.
     """
-    return {
-        'address': ADDRESS_KEYWORDS,
-        'instructional': INSTRUCTIONAL_KEYWORDS,
-        'disclaimer': DISCLAIMER_KEYWORDS,
-        'website_patterns': WEBSITE_PATTERNS
-    }
+    return [cat for cat, pattern in PATTERNS.items() if pattern.search(text)]
 
-def add_custom_keywords(category, new_keywords):
+def text_contains_exclusion_keywords(text):
     """
-    Add custom keywords to a specific category
-    
-    Args:
-        category: One of 'address', 'instructional', 'disclaimer'
-        new_keywords: List of new keywords to add
+    Centralized logic for excluding unwanted headings like addresses, RSVP, Table of Contents, etc.
     """
-    if category == 'address':
-        ADDRESS_KEYWORDS.extend(new_keywords)
-    elif category == 'instructional':
-        INSTRUCTIONAL_KEYWORDS.extend(new_keywords)
-    elif category == 'disclaimer':
-        DISCLAIMER_KEYWORDS.extend(new_keywords)
-    elif category == 'website_patterns':
-        WEBSITE_PATTERNS.extend(new_keywords)
-    else:
-        raise ValueError(f"Unknown category: {category}. Use 'address', 'instructional', 'disclaimer', or 'website_patterns'")
+    text = text.strip()
 
-def get_keyword_count():
-    """
-    Returns the count of keywords in each category
-    """
-    return {
-        'address_keywords': len(ADDRESS_KEYWORDS),
-        'instructional_keywords': len(INSTRUCTIONAL_KEYWORDS),
-        'disclaimer_keywords': len(DISCLAIMER_KEYWORDS),
-        'website_patterns': len(WEBSITE_PATTERNS)
-    }
+    # 1. Check against all patterns from YAML
+    if classify_text(text):
+        return True
+
+    # 2. Exclude RSVP and similar
+    if text.startswith("RSVP"):
+        return True
+
+    # 3. Exclude likely addresses (starts with number + uppercase words)
+    if re.match(r'^\d+\s+[A-Z]+', text):
+        return True
+
+    # 4. Exclude phone numbers
+    if re.match(r'^[\d\-\(\)\+ ]+$', text):
+        return True
+
+    # 5. Exclude all-uppercase long text (often not headings)
+    if text.isupper() and len(text.split()) > 3:
+        return True
+
+    # 6. Exclude very short labels like "FAX", "EMAIL"
+    if len(text) <= 6 and text.isupper():
+        return True
+
+    return False
+
+def get_pattern_count():
+    """Returns the number of loaded patterns."""
+    return len(PATTERNS)
+
+if __name__ == "__main__":
+    print("Loaded patterns:", PATTERNS)
