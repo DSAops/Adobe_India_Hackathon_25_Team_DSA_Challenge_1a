@@ -48,4 +48,4 @@ USER appuser
 # EXPOSE 8000
 
 # Default command
-CMD ["python", "main.py"]
+CMD ["python3", "main.py"]
