@@ -22,9 +22,10 @@ This solution addresses Round 1A of the "Connecting the Dots" challenge, which i
 4. [File Structure & Logic](#file-structure--logic)
 5. [Key Algorithms](#key-algorithms)
 6. [Installation & Usage](#installation--usage)
-7. [Performance Optimizations](#performance-optimizations)
-8. [Testing Strategy](#testing-strategy)
-9. [Constraints & Compliance](#constraints--compliance)
+7. [Libraries & Tools Used](#Libraries & Tools Used)
+8. [Performance Optimizations](#performance-optimizations)
+9. [Testing Strategy](#testing-strategy)
+10. [Constraints & Compliance](#constraints--compliance)
 
 ---
 
@@ -284,6 +285,14 @@ python3 main.py
 ```
 
 ---
+
+### Libraries & Tools Used 🪛
+- PyMuPDF (fitz) – PDF text and metadata extraction
+- OpenCV – Computer vision for table detection
+- pytesseract – OCR for scanned text
+- Pillow – Image processing
+- NumPy – Numerical computations
+
 
 ## ⚡ **Performance Optimizations**
 
