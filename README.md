@@ -22,7 +22,7 @@ This solution addresses Round 1A of the "Connecting the Dots" challenge, which i
 4. [File Structure & Logic](#file-structure--logic)
 5. [Key Algorithms](#key-algorithms)
 6. [Installation & Usage](#installation--usage)
-7. [Libraries & Tools Used](#Libraries & Tools Used)
+7. [Libraries & Tools Used]_(#Libraries & Tools Used)
 8. [Performance Optimizations](#performance-optimizations)
 9. [Testing Strategy](#testing-strategy)
 10. [Constraints & Compliance](#constraints--compliance)
