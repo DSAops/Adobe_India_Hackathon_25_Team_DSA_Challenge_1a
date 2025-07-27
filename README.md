@@ -4,6 +4,15 @@
 ### 🎯 **Challenge Overview**
 This solution addresses Round 1A of the "Connecting the Dots" challenge, which involves extracting structured outlines (Title and Headings H1, H2, H3) from PDF documents with high accuracy and performance.
 
+## 🎯 **Competitive Advantages we have**
+
+1. **Multilingual Support:** Unicode support for international documents
+2. **Hybrid Approach:** Combines OCR and font analysis for maximum coverage
+3. **Table Exclusion:** Prevents table content from being misclassified as headings
+4. **Context Awareness:** Uses surrounding text for better classification
+5. **Performance Optimized:** Multi-threaded processing for speed
+6. **Pattern-Driven Filtering:** Easily maintainable exclusion rules
+
 ---
 
 ## 📋 **Table of Contents**
@@ -254,40 +263,21 @@ def filter_with_context(text, surrounding_lines):
 ### **Docker Method (Recommended)**
 ```bash
 # Build the container
-docker build --platform linux/amd64 -t pdf-extractor .
+docker build --platform linux/amd64 -t headingDetectionRound1A:teamdsa .
+
+Add input PDFs
+
 
 # Run processing
-docker run --rm \
-  -v $(pwd)/input:/app/input:ro \
-  -v $(pwd)/output:/app/output:rw \
-  --network none \
-  pdf-extractor
-```
-
-### **Docker Compose Method**
-```bash
-# Simple execution
-docker-compose up --build
-
-# Background processing
-docker-compose up -d --build
-```
-
-### **Helper Script Usage**
-```bash
-chmod +x docker.sh
-
-# Available commands
-./docker.sh build   # Build image
-./docker.sh run     # Process PDFs
-./docker.sh shell   # Debug mode
-./docker.sh clean   # Cleanup
+ docker run --rm -v $(pwd)/input:/app/input -v $(pwd)/output:/app/output --network none headingDetectionRound1A:teamdsa
 ```
 
 ### **Direct Python Execution**
 ```bash
 # Install dependencies
 pip install -r requirements.txt
+
+Add PDFs in input/ directory
 
 # Process PDFs
 python3 main.py
@@ -360,7 +350,7 @@ python3 main.py
 2. **Table Exclusion:** Prevents table content from being misclassified as headings
 3. **Context Awareness:** Uses surrounding text for better classification
 4. **Performance Optimized:** Multi-threaded processing for speed
-5. **Multilingual Ready:** Unicode support for international documents
+5. **Multilingual Support:** Unicode support for international documents
 6. **Pattern-Driven Filtering:** Easily maintainable exclusion rules
 
 ---
