@@ -379,4 +379,9 @@ python3 main.py
 
 This solution represents a comprehensive approach to document structure extraction, balancing accuracy, performance, and maintainability for real-world PDF processing scenarios.
 
+<img width="1878" height="637" alt="image" src="https://github.com/user-attachments/assets/335a44a4-3f57-4875-b4be-c0d5e80c91d2" />
+<img width="1858" height="646" alt="image" src="https://github.com/user-attachments/assets/bedc65af-f00b-4f8c-80f4-2262d8b4e14a" />
+
+
+
 
