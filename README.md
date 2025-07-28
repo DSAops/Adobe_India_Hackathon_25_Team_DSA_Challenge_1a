@@ -162,7 +162,7 @@ INSTRUCTIONAL_KEYWORDS: 'instructions|please read carefully|guidelines'
   - Handles error cases and logging
 
 #### `ExcludeTableText.py` - **OCR Text Extractor**
-- **Function:** Intelligent text extraction avoiding tables
+- **Function:** Intelligent text extraction, avoiding tables
 - **Key Logic:**
   - Computer vision-based table detection
   - Parallel processing for performance
@@ -266,7 +266,7 @@ def filter_with_context(text, surrounding_lines):
 # Build the container
 docker build --platform linux/amd64 -t headingDetectionRound1A:teamdsa .
 
-Add input PDFs
+#Add input PDFs
 
 
 # Run processing
