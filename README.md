@@ -1,6 +1,7 @@
 # Adobe India Hackathon 2025 - Round 1A Solution
 ## Team DSA Challenge - PDF Document Structure Extraction
 
+### 🖼 **System Architecture & Workflow**
 <img width="4770" height="2970" alt="challenge_1a_system_overview" src="https://github.com/user-attachments/assets/be71c38e-81a8-48e8-95b8-b4ed14f2b148" />
 <img width="4170" height="3570" alt="challenge_1a_detailed_pipeline" src="https://github.com/user-attachments/assets/b83c692d-615d-4e6d-8072-ab747604aae6" />
 
